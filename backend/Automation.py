@@ -102,9 +102,14 @@ def YoutubeSearch(Topic):
     webbrowser.open(f"https://www.youtube.com/results?search_query={Topic}")
     return True
 
+
+
 def PlayYoutube(query):
     playonyt(query)
     return True
+
+
+
 # ---------------- OPEN APP ----------------
 def OpenApp(app, sess=requests.session()):
     try:
@@ -137,6 +142,7 @@ def OpenApp(app, sess=requests.session()):
             return True
         
         
+
 #-------------- CLOSE APP ----------------
 def ClosedApp(app):
     try:
@@ -144,6 +150,8 @@ def ClosedApp(app):
         return True
     except:
         return False
+
+    
 # ---------------- SYSTEM CONTROL -------------
 def System(command):
     command = command.lower().strip()

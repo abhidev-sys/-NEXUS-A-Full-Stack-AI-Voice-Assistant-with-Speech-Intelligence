@@ -1,7 +1,9 @@
-from  groq import Groq #importing the groq libarires tu tuse the api 
-from json import load, dump #importing thre function to read write the jason file 
+from  groq import Groq #importing the groq libarires the api 
+from json import load, dump #importing thre function to read write the json file 
 import datetime # importing the datetime module for real time date and time information 
 from dotenv import dotenv_values #importing the dotenv_values to read enviorment variables from the .env files
+
+
 
 #load the enviorment variavles from the .env files 
 env_vars = dotenv_values(r"R:\JARVIS AI ASSISTANT\backend\.env")
@@ -12,12 +14,12 @@ Assistantname = env_vars.get("Assistantname")
 GroqAPIKey = env_vars.get("GROQ_API_KEY")
 
 
-print("loaded API KEY:", GroqAPIKey)
+# print("loaded API KEY:", GroqAPIKey)
 
 #its shows the entre error 
 
-print("Loaded:", env_vars)
-print("API:", env_vars.get("GROQ_API_KEY"))
+# print("Loaded:", env_vars)
+# print("API:", env_vars.get("GROQ_API_KEY"))
 
 #its shows the entre error 
 from dotenv import dotenv_values
@@ -27,9 +29,6 @@ client = Groq(api_key=GroqAPIKey)
 
 #initilize the an empty list to store chat message
 message = []
-
-
-
 
 
 #define the system message that provide context to the AI chatbot 
@@ -60,12 +59,13 @@ except FileNotFoundError:
 def RealtimeInformation():
     current_date_time = datetime.datetime.now()
     day  = current_date_time.strftime("%A")
-    date  = current_date_time.strftime("%d")
+    date  = current_date_time.strftime("%D")
     month = current_date_time.strftime("%B")
     year =  current_date_time.strftime("%Y")
     hour = current_date_time.strftime("%H")
     minute = current_date_time.strftime("%M")
     second = current_date_time.strftime("%S")
+    
     
     #fromat the inforamtion into s string 
     data = f"please use this Real-timeInforamtion if needed \n"
@@ -74,7 +74,7 @@ def RealtimeInformation():
     return data
 
 
-#fucniton the modify the chatbot resposne
+#fucniton that modify the chatbot resposne
 def AnswerModifer(Answer):
     lines = Answer.split("\n") #split the rsponse into lines
     non_empty_lines = [line for line in lines if line.strip()]  
@@ -143,6 +143,6 @@ def Chatbot(Query):
 #MAIN PROGRRAM ENTRY POINT
 if __name__ ==  "__main__":
     while True:
-        user_input = input("ENTER YOUR QUESTION: ")#prompt the user for a user question 
+        user_input = input("ENTER YOUR QUERY: ")#prompt the user for a user question 
         print(Chatbot(user_input)) #call the chatbot   function to print its response   
   

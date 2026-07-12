@@ -5,10 +5,12 @@ from dotenv import dotenv_values
 from pathlib import Path
 from json import load, dump
 
-# LOAD ENV
+
+# LOAD THE ENV  FILE FOR AN API
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
 env = dotenv_values(ENV_PATH)
+
 
 USERNAME = env.get("Username")
 ASSISTANT = env.get("Assistantname")
@@ -58,6 +60,7 @@ def GoogleSearch(query):
     return out
 
 
+
 SYSTEM_PROMPT = f"""
 You are {ASSISTANT}, created by {USERNAME}.
 You are a REALTIME AI ASSISTANT.
@@ -67,9 +70,9 @@ Strict Rules:
 3. DO NOT output <think> or reasoning.
 4. Answer clearly, accurately, professionally.
 """
-# -------------------------
+
 # REALTIME JARVIS ENGINE
-# -------------------------
+
 def RealtimeSearchEngine(prompt):
 
     # 1. TIME & DATE HANDLING
@@ -105,9 +108,8 @@ def RealtimeSearchEngine(prompt):
     return answer.strip()
 
 
-# -------------------------
 # MAIN LOOP
-# -------------------------
+
 if __name__ == "__main__":
     while True:
         query = input("Enter your query: ")

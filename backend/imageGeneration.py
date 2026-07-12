@@ -8,7 +8,10 @@ from time import sleep
 import json
 
 # Load .env
-load_dotenv()
+load_dotenv() # LOAD THE ENV FILE HERE FOR INTRAACTION
+
+
+#this will load the API KEY OF THE HUGGING FACE FROMT THE .ENV FILE 
 
 API_KEY = os.getenv("huggingfaceAPIKey")
 
@@ -30,6 +33,7 @@ async def query(payload):
         headers=headers,
         json=payload
     )
+    
 
     print("STATUS:", response.status_code)
     print("HEAD:", response.content[:200])

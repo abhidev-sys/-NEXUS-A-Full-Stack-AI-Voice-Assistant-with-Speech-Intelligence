@@ -6,8 +6,9 @@ TempDirectoryPath,
 SetMicrophoneStatus,
 QueryModifier,
 GetMicrophoneStatus,
-GetAssistantStatus,)
-from backend.model import FirstLayerDMM
+GetAssistantStatus,
+)
+from backend.model import FirstLayerDMM   # thiis for the imporitopmn for the import luiavbavry
 from backend.RealtimeSearchEngine import RealtimeSearchEngine
 from backend.Automation import TranslateAndExecute
 from backend.speechtotext import SpeechRecognition
@@ -26,6 +27,8 @@ import sys
 
 MIC_BUSY =  False
 
+
+# here we trying to load the files for text
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / "backend" / ".env"
 env_vars = dotenv_values(ENV_PATH)
@@ -58,6 +61,7 @@ WAKE_WORDS = [
     "ok nexus",
     "hello nexus",
     "nexus"
+    "wakeup nexus"
 ]
 
 def has_wake_word(text: str):
@@ -66,7 +70,6 @@ def has_wake_word(text: str):
         if text.startswith(w):
             return w
     return None
-
 
 
 

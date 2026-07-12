@@ -17,7 +17,7 @@ from dotenv import dotenv_values
 import sys
 import os 
 
- 
+
 #load the important .env and more vairables
 env_vars = dotenv_values(".env")
 Assistantname = env_vars.get("Assistantname")
@@ -199,7 +199,7 @@ def QueryModifier(Query):
     
         new_query = Query.lower().strip() # it will remove the extra spae and ad losercase form the user input 
         query_words = new_query.split() #its break the sntence in words list
-        question_words = ["how" , "what" ,"who" , "where" , "when" , "why" , "which" , "whose" , "whom" ," can you" , "what's" , "where's", "how's"]
+        question_words = ["how" , "what" ,"who" , "where" , "when" , "why" , "which" , "whose" , "whom" ," can you" , "what's" , "where's", "how's",]
        
        
         if any(word + " " in new_query for word in question_words): # its will check is there any question word is present in sentence
