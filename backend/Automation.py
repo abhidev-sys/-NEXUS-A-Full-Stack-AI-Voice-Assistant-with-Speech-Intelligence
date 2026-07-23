@@ -49,6 +49,7 @@ def GoogleSearch(query):
         print("[red]Google Search Error:[/red]", e)
         return False
 
+
     
 # ---------------- CONTENT GENERATION ----------------
 def ContentWriterAI(prompt):

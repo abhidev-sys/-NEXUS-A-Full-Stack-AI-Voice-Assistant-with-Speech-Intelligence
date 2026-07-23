@@ -1,4 +1,6 @@
 import os
+import json
+import time
 from dotenv import load_dotenv
 from cohere import Client
 from rich import print
@@ -36,11 +38,15 @@ func = [
     "reminder"
 ]
 
+# Canonical categories used by the NEW structured-JSON path.
+VALID_CATEGORIES = [
+    "exit", "general", "realtime", "open", "close", "play",
+    "generate image", "system", "content", "google search",
+    "youtube search", "reminder"
+]
 
-messages = []
-
-# -------- PREAMBLE -------------
-preamble="""You are a Decision-Making Model. Classify only into these categories:
+# -------- OLD TEXT-STYLE PREAMBLE (kept — used only by the fallback) ------
+legacy_preamble = """You are a Decision-Making Model. Classify only into these categories:
 
 general
 realtime
@@ -66,7 +72,37 @@ Rules:
 - If user says bye: respond with "exit"
 """
 
-# -------- CHAT HISTORY (FIXED FORMAT) -----------
+# -------- NEW JSON PREAMBLE (primary path) ----------
+json_preamble = """You are a Decision-Making Model. Classify the user's message into
+one or more tasks.
+
+Respond ONLY with valid JSON — no extra words, no markdown fences — in
+exactly this shape:
+
+{"tasks": [{"category": "<category>", "text": "<relevant part of the query>"}]}
+
+Valid categories (use exactly one of these per task):
+exit, general, realtime, open, close, play, generate image, system,
+content, google search, youtube search, reminder
+
+Rules:
+- Do NOT answer the query itself — only classify it.
+- If the sentence contains multiple actions, add one object per action
+  to the "tasks" list, in the order they were said.
+- For opening apps -> category "open", text = the app name.
+- For closing apps -> category "close", text = the app name.
+- For system actions like mute/unmute/volume -> category "system".
+- For opening a browser search results page -> category "google search"
+  or "youtube search".
+- For anything that needs a real, up-to-date answer that could change
+  over time — stock/crypto prices, live scores, current events, news,
+  weather, "who is the current ___" -> category "realtime".
+- If the user is saying goodbye -> category "exit".
+- Anything else conversational (opinions, jokes, general knowledge that
+  doesn't change over time) -> category "general".
+"""
+
+# -------- FEW-SHOT EXAMPLES (kept exactly as before, used by fallback) ---
 ChatHistory = [
     {"role": "User", "message": "how are you"},
     {"role": "Chatbot", "message": "general how are you"},
@@ -76,39 +112,118 @@ ChatHistory = [
     {"role": "Chatbot", "message": "open chrome , general tell me about mahatma gandhi"},
 ]
 
+# -------- REAL, GROWING CONVERSATION HISTORY (Step 1 fix, unchanged) -----
+messages = []
+MAX_HISTORY_ENTRIES = 40
 
-# -------- FIRST LAYER DMM ----------
-# -------- FIRST LAYER DMM ----------
-def FirstLayerDMM(prompt: str = "test"):
-    messages.append({"role": "user", "message": prompt})
 
-    # Use chat() instead of chat_stream() for Cohere v5.x
-    response = co.chat(
-        model="command-r-plus-08-2024",
-        message=prompt,
-        temperature=0.2,
-        chat_history=ChatHistory,
-        preamble=preamble
-    )
+# -------- RETRY / BACKOFF HELPER ----------
+def retry_with_backoff(func, *args, max_retries=3, base_delay=1, **kwargs):
+    """Calls func(*args, **kwargs). If it raises, waits and tries again,
+    doubling the wait each time (1s, 2s, 4s). After max_retries failed
+    attempts, re-raises the last error so the caller's own error
+    handling (e.g. the JSON->legacy fallback, or FirstThread's
+    try/except) still gets a chance to react."""
+    last_exception = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries:
+                delay = base_delay * (2 ** (attempt - 1))
+                print(f"[RETRY] Attempt {attempt}/{max_retries} failed: {e}. Retrying in {delay}s...")
+                time.sleep(delay)
+    raise last_exception
 
-     # Clean text
+
+def _trim_history():
+    global messages
+    if len(messages) > MAX_HISTORY_ENTRIES:
+        messages = messages[len(messages) - MAX_HISTORY_ENTRIES:]
+
+
+def _record_exchange(prompt, temp):
+    messages.append({"role": "User", "message": prompt})
+    messages.append({"role": "Chatbot", "message": ", ".join(temp)})
+    _trim_history()
+
+
+def _legacy_text_parse(prompt: str):
+    """Old behaviour, kept as a safety net. Only used if the JSON path
+    fails for any reason (older cohere SDK without response_format
+    support, an API error, or the model returning invalid JSON)."""
+
+    def _call():
+        return co.chat(
+            model="command-r-plus-08-2024",
+            message=prompt,
+            temperature=0.2,
+            chat_history=ChatHistory + messages,
+            preamble=legacy_preamble
+        )
+
+    response = retry_with_backoff(_call)
+
     clean = response.text.replace("\n", "").strip()
-
-    # Split multiple tasks by comma
     parts = [i.strip() for i in clean.split(",")]
 
     temp = []
-
-    # Match each part with defined functions
     for task in parts:
         for f in func:
             if task.lower().startswith(f):
                 temp.append(task)
 
-    # If nothing matches, default to general
     if len(temp) == 0:
-        return ["general " + prompt]
+        temp = ["general " + prompt]
 
+    return temp
+
+
+def _json_parse(prompt: str):
+    """New, more reliable path: ask the model for structured JSON
+    instead of a free-text 'category query' line."""
+
+    def _call():
+        return co.chat(
+            model="command-r-plus-08-2024",
+            message=prompt,
+            temperature=0.2,
+            chat_history=ChatHistory + messages,
+            preamble=json_preamble,
+            response_format={"type": "json_object"},
+        )
+
+    response = retry_with_backoff(_call)
+
+    data = json.loads(response.text)
+    tasks = data.get("tasks", [])
+
+    temp = []
+    for t in tasks:
+        category = str(t.get("category", "")).strip().lower()
+        text = str(t.get("text", "")).strip()
+        if category in VALID_CATEGORIES and text:
+            temp.append(f"{category} {text}")
+
+    if not temp:
+        temp = ["general " + prompt]
+
+    return temp
+
+
+# -------- FIRST LAYER DMM ----------
+def FirstLayerDMM(prompt: str = "test"):
+    try:
+        temp = _json_parse(prompt)
+    except Exception as e:
+        # response_format not supported by this SDK version, API hiccup,
+        # or the model didn't return valid JSON -> fall back safely
+        # instead of crashing the whole assistant.
+        print("[WARN] Structured JSON classification failed, using fallback:", e)
+        temp = _legacy_text_parse(prompt)
+
+    _record_exchange(prompt, temp)
     return temp
 
 

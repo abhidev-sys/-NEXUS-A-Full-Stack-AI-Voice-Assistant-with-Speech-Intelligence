@@ -17,6 +17,7 @@ from backend.texttospeech import TextToSpeech
 from dotenv import dotenv_values
 from asyncio import run
 from time import sleep
+import time
 import subprocess
 import threading 
 import json
@@ -131,8 +132,12 @@ InitialExecution()
 def MainExecution():
     global MIC_BUSY
 
+    t_start = time.time()
+
     SetAssistantStatus("Listening")
     Query = SpeechRecognition()
+    t_stt = time.time()
+    print(f"[TIMING] Speech recognition took {t_stt - t_start:.2f}s")
 
     if not Query or Query.strip() == "":
         SetAssistantStatus("Available")
@@ -141,48 +146,96 @@ def MainExecution():
     print("🎙 FINAL QUERY:", Query)
     SetAssistantStatus("Thinking")
 
-    Decision = FirstLayerDMM(Query)
-    print("\nDecision :", Decision, "\n")
+    # ---------------------------------------------------------
+    # ROUTE FIRST, THEN CLASSIFY — instead of always calling
+    # FirstLayerDMM up front and then throwing its result away
+    # whenever is_question(Query) is True. Questions used to pay
+    # for TWO sequential model/network calls (FirstLayerDMM +
+    # RealtimeSearchEngine); now they only pay for one.
+    # ---------------------------------------------------------
 
-
-
-    # 1️ QUESTION → ANSWER ONLY
-
+    # 1️ QUESTION → ANSWER ONLY (single call, no FirstLayerDMM needed)
     if is_question(Query):
-        print(" Question detected → answering")
+        print(" Question detected → answering directly (skipping FirstLayerDMM)")
 
         SetAssistantStatus("Searching...")
+        t_call_start = time.time()
         Answer = RealtimeSearchEngine(QueryModifier(Query))
+        print(f"[TIMING] RealtimeSearchEngine took {time.time() - t_call_start:.2f}s")
+
         ShowTextToScreen(f"{Assistantname}: {Answer}")
+
+        t_tts_start = time.time()
         TextToSpeech(Answer)
+        print(f"[TIMING] TextToSpeech took {time.time() - t_tts_start:.2f}s")
+
         SetAssistantStatus("Available")
+        print(f"[TIMING] TOTAL turn time: {time.time() - t_start:.2f}s")
         return
 
+    # Not a question → we DO need the decision model to tell us
+    # whether this is automation or general chat.
+    t_decision_start = time.time()
+    Decision = FirstLayerDMM(Query)
+    print(f"[TIMING] FirstLayerDMM took {time.time() - t_decision_start:.2f}s")
+    print("\nDecision :", Decision, "\n")
 
     # 2️ AUTOMATION COMMANDS
-    
     for q in Decision:
         if any(q.startswith(func) for func in Function):
             print("⚙ Automation triggered:", q)
             run(TranslateAndExecute(list(Decision)))
             SetAssistantStatus("Available")
+            print(f"[TIMING] TOTAL turn time: {time.time() - t_start:.2f}s")
             return
 
-    
+    # 2.5️ REALTIME CATEGORY — previously this was never checked here,
+    # so anything the model tagged "realtime" silently fell through
+    # to general chat and got an offline/stale answer instead of a
+    # real web-search-backed one.
+    for q in Decision:
+        if q.startswith("realtime"):
+            QueryFinal = q.replace("realtime", "", 1).strip()
+            print("🌐 Realtime query detected:", QueryFinal)
+
+            SetAssistantStatus("Searching...")
+            t_call_start = time.time()
+            Answer = RealtimeSearchEngine(QueryModifier(QueryFinal))
+            print(f"[TIMING] RealtimeSearchEngine took {time.time() - t_call_start:.2f}s")
+
+            ShowTextToScreen(f"{Assistantname}: {Answer}")
+
+            t_tts_start = time.time()
+            TextToSpeech(Answer)
+            print(f"[TIMING] TextToSpeech took {time.time() - t_tts_start:.2f}s")
+
+            SetAssistantStatus("Available")
+            print(f"[TIMING] TOTAL turn time: {time.time() - t_start:.2f}s")
+            return
+
     # 3️ GENERAL CHAT
-    
     for q in Decision:
         if q.startswith("general"):
             QueryFinal = q.replace("general", "").strip()
+
+            t_call_start = time.time()
             Answer = Chatbot(QueryModifier(QueryFinal))
+            print(f"[TIMING] Chatbot took {time.time() - t_call_start:.2f}s")
+
             ShowTextToScreen(f"{Assistantname}: {Answer}")
             SetAssistantStatus("Answering")
+
+            t_tts_start = time.time()
             TextToSpeech(Answer)
+            print(f"[TIMING] TextToSpeech took {time.time() - t_tts_start:.2f}s")
+
             SetAssistantStatus("Available")
+            print(f"[TIMING] TOTAL turn time: {time.time() - t_start:.2f}s")
             return
 
+    SetAssistantStatus("Available")
 
-                      
+
 def FirstThread():
     global MIC_BUSY
 
@@ -191,9 +244,20 @@ def FirstThread():
 
         if status == "true" and not MIC_BUSY:
             MIC_BUSY = True
-            MainExecution()
-            MIC_BUSY = False
-            SetAssistantStatus("Available")
+            try:
+                MainExecution()
+            except Exception as e:
+                # A single failed API/network call must not kill this
+                # thread permanently — without this, one hiccup (like a
+                # DNS/connection error) would silently stop the mic from
+                # ever responding again until the app is restarted.
+                print("[ERROR] MainExecution crashed:", e)
+                import traceback
+                traceback.print_exc()
+                ShowTextToScreen(f"{Assistantname}: Sorry, I hit a connection problem. Please try again.")
+            finally:
+                MIC_BUSY = False
+                SetAssistantStatus("Available")
 
         sleep(0.2)
 
@@ -211,15 +275,3 @@ if __name__ == "__main__":
     mic_thread = threading.Thread(target=FirstThread, daemon=True)
     mic_thread.start()
     secondThread()
-
-    
-                          
-                      
-                                  
-                      
-
-                      
-                 
-        
-                  
-                

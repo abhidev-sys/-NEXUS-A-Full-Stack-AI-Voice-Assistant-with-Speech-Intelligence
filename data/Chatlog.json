@@ -14,5 +14,53 @@
     {
         "role": "assistant",
         "content": "Thursday"
+    },
+    {
+        "role": "user",
+        "content": "Hen axis play a sad song for me."
+    },
+    {
+        "role": "assistant",
+        "content": "Hen doesn't have the ability to play a sad song, but I can suggest some soothing music for you."
+    },
+    {
+        "role": "user",
+        "content": "Hello nexus."
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Abhishek."
+    },
+    {
+        "role": "user",
+        "content": "Hello nexus open chrome."
+    },
+    {
+        "role": "assistant",
+        "content": "Chrome is now open."
+    },
+    {
+        "role": "user",
+        "content": "Hello nexus."
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Abhishek."
+    },
+    {
+        "role": "user",
+        "content": "Have something about python programming languages."
+    },
+    {
+        "role": "assistant",
+        "content": "Python is a high-level, interpreted programming language known for its simplicity and readability."
+    },
+    {
+        "role": "user",
+        "content": "Tell me something about yourself."
+    },
+    {
+        "role": "assistant",
+        "content": "I am NEXUS, an advanced AI chatbot designed to provide accurate and up-to-date information."
     }
 ]
