@@ -57,6 +57,7 @@ def is_question(text: str) -> bool:
     return any(word in text for word in QUESTION_WORDS)
 
 
+
 WAKE_WORDS = [
     "hey nexus",
     "ok nexus",
@@ -64,6 +65,7 @@ WAKE_WORDS = [
     "nexus"
     "wakeup nexus"
 ]
+
 
 def has_wake_word(text: str):
     text = text.lower().strip()
@@ -82,6 +84,7 @@ def ShowDeafaultMessage():
 
         with open(TempDirectoryPath('RESPONSES.data'), 'w', encoding='utf-8') as file:
             file.write(DeafaultMessage)
+
 
 def ReadChatLog():
     with open(r'Data\ChatLog.json' , 'r' , encoding='utf-8') as file:
@@ -173,6 +176,7 @@ def MainExecution():
         print(f"[TIMING] TOTAL turn time: {time.time() - t_start:.2f}s")
         return
 
+
     # Not a question → we DO need the decision model to tell us
     # whether this is automation or general chat.
     t_decision_start = time.time()
@@ -212,6 +216,7 @@ def MainExecution():
             SetAssistantStatus("Available")
             print(f"[TIMING] TOTAL turn time: {time.time() - t_start:.2f}s")
             return
+
 
     # 3️ GENERAL CHAT
     for q in Decision:
@@ -262,6 +267,7 @@ def FirstThread():
         sleep(0.2)
 
                 
+       
                 
 def secondThread():
     app = QApplication(sys.argv)
@@ -270,6 +276,7 @@ def secondThread():
     sys.exit(app.exec_())
 
 
+    
     
 if __name__ == "__main__":
     mic_thread = threading.Thread(target=FirstThread, daemon=True)

@@ -62,5 +62,53 @@
     {
         "role": "assistant",
         "content": "I am NEXUS, an advanced AI chatbot designed to provide accurate and up-to-date information."
+    },
+    {
+        "role": "user",
+        "content": "how are you "
+    },
+    {
+        "role": "assistant",
+        "content": "I'm functioning properly."
+    },
+    {
+        "role": "user",
+        "content": "can you tell me the who is PM "
+    },
+    {
+        "role": "assistant",
+        "content": "I don't have the current information about the Prime Minister, but I can suggest searching for the latest news."
+    },
+    {
+        "role": "user",
+        "content": "OKAY CAN YOU TELL ME ABOUT VIVO"
+    },
+    {
+        "role": "assistant",
+        "content": "Vivo is a Chinese technology company that designs, manufactures, and distributes smartphones, smartphone accessories, and other consumer electronics."
+    },
+    {
+        "role": "user",
+        "content": "an what about oppo"
+    },
+    {
+        "role": "assistant",
+        "content": "Oppo is a Chinese electronics company that manufactures and sells smartphones, Blu-ray players, and other electronic devices, known for their high-quality camera phones."
+    },
+    {
+        "role": "user",
+        "content": "what about iphones"
+    },
+    {
+        "role": "assistant",
+        "content": "iPhone is a line of smartphones designed and marketed by Apple Inc, known for their sleek design, user-friendly interface, and advanced features."
+    },
+    {
+        "role": "user",
+        "content": "who is the ower of apple"
+    },
+    {
+        "role": "assistant",
+        "content": "Apple is a publicly traded company, but its co-founder was Steve Jobs, and after his death, Tim Cook is the current CEO."
     }
 ]
