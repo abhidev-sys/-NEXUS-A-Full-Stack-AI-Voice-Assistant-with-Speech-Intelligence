@@ -3,8 +3,6 @@ from json import load, dump #importing thre function to read write the json file
 import datetime # importing the datetime module for real time date and time information 
 from dotenv import dotenv_values #importing the dotenv_values to read enviorment variables from the .env files
 
-
-
 #load the enviorment variavles from the .env files 
 env_vars = dotenv_values(r"R:\JARVIS AI ASSISTANT\backend\.env")
 
@@ -58,11 +56,11 @@ except FileNotFoundError:
 #function the to get the real time date and time for the informtion
 def RealtimeInformation():
     current_date_time = datetime.datetime.now()
-    day  = current_date_time.strftime("%A")
+    day  =  current_date_time.strftime("%A")
     date  = current_date_time.strftime("%D")
     month = current_date_time.strftime("%B")
     year =  current_date_time.strftime("%Y")
-    hour = current_date_time.strftime("%H")
+    hour =  current_date_time.strftime("%H")
     minute = current_date_time.strftime("%M")
     second = current_date_time.strftime("%S")
     

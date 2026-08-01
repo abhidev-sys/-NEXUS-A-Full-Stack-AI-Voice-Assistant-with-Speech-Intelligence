@@ -100,7 +100,7 @@ def offline_tts(text):
 # ---------------- TEST MODE ----------------
 if __name__ == "__main__":
     while True:
-        t = input("Enter text: ")
+        t = input("Enter your text: ")
         if t.lower() == "exit":
             break
         TextToSpeech(t)
