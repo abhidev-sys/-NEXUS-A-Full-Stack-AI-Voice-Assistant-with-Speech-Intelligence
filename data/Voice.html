@@ -14,7 +14,7 @@
 
     function startRecognition() {
         recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = "en-US";
+        recognition.lang = "en-IN";
         recognition.continuous = false;   // 🔥 VERY IMPORTANT
 
         recognition.onresult = function (event) {

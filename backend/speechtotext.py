@@ -14,7 +14,7 @@ env_vars = dotenv_values(r"R:\JARVIS AI ASSISTANT\.env")
 
 
 #get the input language settting from the enviorment variables 
-InputLanguage = env_vars.get("InputLanguage", "en-US")
+InputLanguage = env_vars.get("InputLanguage", "en-IN")
 
 #load the inptus values
 print("Loaded Language:" , InputLanguage)

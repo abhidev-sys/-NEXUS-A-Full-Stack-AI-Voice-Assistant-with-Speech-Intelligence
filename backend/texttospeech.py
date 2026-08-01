@@ -2,87 +2,33 @@ import asyncio
 import edge_tts
 import pyttsx3
 import pygame
-import os
 import threading
+from pathlib import Path
 from dotenv import dotenv_values
 
 # ---------------- CONFIG ----------------
+
 env = dotenv_values(".env")
-AssistantVoice = env.get("AssistantVoice") or "hi-IN-SwaraNeural"
 
-AUDIO_PATH = "backend/data/speech.mp3"
+AssistantVoice = env.get("AssistantVoice", "en-US-GuyNeural")
 
-# ---------------- INIT PYGAME ONCE ----------------
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+DATA_DIR.mkdir(exist_ok=True)
+
+AUDIO_PATH = DATA_DIR / "speech.mp3"
+
+print(f"Using Voice : {AssistantVoice}")
+
+# ---------------- INIT ----------------
+
 pygame.mixer.init()
 
-# ---------------- OFFLINE TTS ----------------
-engine = pyttsx3.init()
-engine.setProperty("rate", 170)
+engine = pyttsx3.init(driverName="sapi5")
+engine.setProperty("rate", 155)
 engine.setProperty("volume", 1.0)
 
-def offline_tts(text):
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 155)
-    engine.setProperty("volume", 1.0)
-
-    engine.say(text)
-    engine.runAndWait()
-    engine.stop()
-
-
-# ---------------- ONLINE TTS ----------------
-async def generate_audio(text):
-    if os.path.exists(AUDIO_PATH):
-        os.remove(AUDIO_PATH)
-
-    communicate = edge_tts.Communicate(
-        text=text,
-        voice=AssistantVoice,
-        rate="+10%"
-    )
-    await communicate.save(AUDIO_PATH)
-
-# ---------------- SAFE ASYNC RUN ----------------
-def run_async(coro):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
-
-    if loop and loop.is_running():
-        future = asyncio.run_coroutine_threadsafe(coro, loop)
-        future.result()
-    else:
-        asyncio.run(coro)
-
-# ---------------- PLAY AUDIO ----------------
-def play_audio():
-    pygame.mixer.music.load(AUDIO_PATH)
-    pygame.mixer.music.play()
-
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
-
-
-# ---------------- MAIN TTS FUNCTION ----------------
-def TextToSpeech(text, func=lambda r=None: True):
-    try:
-        run_async(generate_audio(text))
-
-        if not os.path.exists(AUDIO_PATH) or os.path.getsize(AUDIO_PATH) == 0:
-            raise RuntimeError("Edge TTS failed")
-
-        play_audio()
-
-    except Exception:
-        print("⚠ Online TTS failed → Offline mode")
-        offline_tts(text)
-
-    finally:
-        try:
-            func(False)
-        except:
-            pass
+# ---------------- OFFLINE TTS ----------------
 
 def offline_tts(text):
     def speak():
@@ -97,10 +43,91 @@ def offline_tts(text):
     t.start()
     t.join()
 
-# ---------------- TEST MODE ----------------
+
+# ---------------- ONLINE TTS ----------------
+
+async def generate_audio(text):
+
+    # Purani file ko release karo
+    pygame.mixer.music.stop()
+
+    try:
+        pygame.mixer.music.unload()
+    except:
+        pass
+
+    if AUDIO_PATH.exists():
+        try:
+            AUDIO_PATH.unlink()
+        except PermissionError:
+            pass
+
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice=AssistantVoice,
+        rate="+10%"
+    )
+
+    await communicate.save(str(AUDIO_PATH))
+
+# ---------------- ASYNC ----------------
+
+def run_async(coro):
+    asyncio.run(coro)
+
+
+# ---------------- PLAY AUDIO ----------------
+
+def play_audio():
+    pygame.mixer.music.stop()
+    pygame.mixer.music.unload()      # <-- bahut important
+
+    pygame.mixer.music.load(str(AUDIO_PATH))
+    pygame.mixer.music.play()
+
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)
+
+    pygame.mixer.music.stop()
+    pygame.mixer.music.unload()      # <-- file release
+
+
+# ---------------- MAIN ----------------
+
+def TextToSpeech(text, func=lambda _: None):
+
+    try:
+
+        run_async(generate_audio(text))
+
+        if not AUDIO_PATH.exists():
+            raise FileNotFoundError("speech.mp3 not generated")
+
+        if AUDIO_PATH.stat().st_size == 0:
+            raise RuntimeError("Generated file is empty")
+
+        play_audio()
+
+    except Exception as e:
+
+        print("Edge TTS Error :", e)
+        print("Switching to Offline Voice...")
+
+        offline_tts(text)
+
+    finally:
+        func(False)
+
+
+# ---------------- TEST ----------------
+
 if __name__ == "__main__":
+
     while True:
-        t = input("Enter your text: ")
-        if t.lower() == "exit":
+
+        text = input("Enter Text : ")
+
+        if text.lower() == "exit":
             break
-        TextToSpeech(t)
+
+        TextToSpeech(text)
