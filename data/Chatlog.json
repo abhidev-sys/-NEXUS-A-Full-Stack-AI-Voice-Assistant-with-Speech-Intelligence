@@ -110,5 +110,45 @@
     {
         "role": "assistant",
         "content": "Apple is a publicly traded company, but its co-founder was Steve Jobs, and after his death, Tim Cook is the current CEO."
+    },
+    {
+        "role": "user",
+        "content": "Hello nexus."
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Abhishek."
+    },
+    {
+        "role": "user",
+        "content": "Hello nexus can you please?"
+    },
+    {
+        "role": "assistant",
+        "content": "Yes, I can help you."
+    },
+    {
+        "role": "user",
+        "content": "Nexus."
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Abhishek."
+    },
+    {
+        "role": "user",
+        "content": "Chalo jaldi."
+    },
+    {
+        "role": "assistant",
+        "content": "Let's go quickly."
+    },
+    {
+        "role": "user",
+        "content": "Hey nexus."
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Abhishek."
     }
 ]

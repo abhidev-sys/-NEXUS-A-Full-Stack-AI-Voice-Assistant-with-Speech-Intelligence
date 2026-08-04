@@ -10,7 +10,7 @@ from dotenv import dotenv_values
 
 env = dotenv_values(".env")
 
-AssistantVoice = env.get("AssistantVoice", "en-US-GuyNeural")
+AssistantVoice = env.get("AssistantVoice", "en-IN-PrabhatNeural")
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -65,7 +65,8 @@ async def generate_audio(text):
     communicate = edge_tts.Communicate(
         text=text,
         voice=AssistantVoice,
-        rate="+10%"
+        rate="+25%",
+        pitch="+2Hz"
     )
 
     await communicate.save(str(AUDIO_PATH))
